@@ -1,0 +1,13 @@
+version: "0"
+model_name: "qwen3:4b-instruct"
+dataset_name: "popular"
+num_examples: 1
+extra_prints: true
+llm_cfg:
+  answer_model: "qwen3:4b-instruct"
+  divide_model: "qwen3:4b-instruct"
+  base_url: "http://127.0.0.1:11434/v1"
+  api_key: "dummy"
+prompt_cfg:
+  divide_prompt: "v0/divide.txt"
+  answer_prompt: "v0/answer.txt"

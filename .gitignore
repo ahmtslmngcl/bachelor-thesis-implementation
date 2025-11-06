@@ -1,0 +1,14 @@
+external/kedkg/model
+external/kedkg/train/results
+external/kedkg/train/results_entity_judge
+external/rippleedits/src/wikidata/ent_label2id.json/
+
+__pycache__/
+*.pyc
+.DS_Store
+.env
+*.log
+
+
+.vscode/
+.idea/
