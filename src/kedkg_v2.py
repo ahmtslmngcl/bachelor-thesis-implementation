@@ -11,7 +11,6 @@ from typing import Optional
 import spacy
 import openai
 
-LINKING_FAIL_COUNT = 0
 
 try: # lazy import
     from src.modeleditor import ModelEditor
@@ -201,20 +200,6 @@ class KEDKG:
 
         return kb
 
-    """    
-    def link_entity(self, entity, nlp):
-        pattern = r'Q\d+'
-        name = entity
-        try:
-            linking = re.search(pattern, str(nlp(entity.capitalize())._.linkedEntities))
-        except:
-            linking = re.search(pattern, str(nlp(entity)._.linkedEntities))
-        if linking:
-            linking = linking.group(0) # Q?
-        else:
-            linking = name
-        return linking
-    """
 
     def link_entity(self, entity, nlp):
         pattern = r'Q\d+'
@@ -230,8 +215,6 @@ class KEDKG:
                 linking = name
             return linking
         except Exception as e:
-            global LINKING_FAIL_COUNT
-            LINKING_FAIL_COUNT += 1
             print(f"[Error] link_entity fail for '{entity}': {e}")
             return name
 
@@ -261,7 +244,7 @@ class KEDKG:
     
     def llm_answer_with_facts(self, question: str) -> str:
         """
-        LLM answering that uses all current KG triples explicitly in the prompt.
+        LLM answering that uses edit related KG triples explicitly in the prompt.
         """
 
         facts = []
@@ -419,9 +402,10 @@ class KEDKG:
                     rel = triple['type']
                     if head == None or head == "" or tail == None or tail == "" or rel == None or rel == "":
                         continue
-
+                    
                     # erase true answer
-                    if edit["target_true"]["str"] in head or edit["target_true"]["str"] in tail:
+                    target_str = edit["target_true"]["str"]
+                    if target_str and (target_str in head or target_str in tail):
                         continue
                     
                     try:
@@ -473,7 +457,8 @@ class KEDKG:
                     continue
 
                 # erase true answer
-                if edit["target_true"]["str"] in head or edit["target_true"]["str"] in tail:
+                target_str = edit["target_true"]["str"]
+                if target_str and (target_str in head or target_str in tail):
                     continue
                 
                 try:

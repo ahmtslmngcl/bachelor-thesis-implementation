@@ -1,0 +1,41 @@
+=== RippleEdits Benchmark ===
+Timestamp: 2025-11-17 13:57:16
+
+Config:
+  version: 1
+  model_name: gemma3:4b
+  dataset_name: popular
+  num_examples: 200
+  extra_prints: True
+  llm_cfg: {'answer_model': 'gemma3:4b', 'divide_model': 'gemma3:4b', 'base_url': 'http://127.0.0.1:11434/v1', 'api_key': 'dummy'}
+  prompt_cfg: {'divide_prompt': 'v0/divide.txt', 'answer_prompt': 'v0/answer.txt'}
+
+------------------------------------
+
+Results of axis TestsAxis.MAKING_UP:
+45.5 successful edits (out of 200)
+Average accuracy is 0.6075091575091576
+Average portion of executed_tests is 0.25694846972319485
+Average total number of tests is 8.076923076923077
+Results of axis TestsAxis.LOGICAL_CONSTRAINTS:
+13.5 successful edits (out of 200)
+Average accuracy is 0.39814814814814814
+Average portion of executed_tests is 0.7499999999999999
+Average total number of tests is 2.8518518518518516
+Results of axis TestsAxis.SUBJECT_PARAPHRASING:
+No checked tests for this axis
+Results of axis TestsAxis.TWO_HOP:
+18.0 successful edits (out of 200)
+Average accuracy is 0.09259259259259259
+Average portion of executed_tests is 0.4778301415964814
+Average total number of tests is 6.527777777777778
+Results of axis TestsAxis.FORWARD_TWO_HOP:
+2.5 successful edits (out of 200)
+Average accuracy is 0.0
+Average portion of executed_tests is 0.41999999999999993
+Average total number of tests is 4.0
+Results of axis TestsAxis.PREVIOUS_STORAGE:
+11.0 successful edits (out of 200)
+Average accuracy is 0.18181818181818182
+Average portion of executed_tests is 1.0
+Average total number of tests is 1.0

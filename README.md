@@ -1,6 +1,6 @@
 # Bachelor-Thesis-Implementation
 
-This repository contains the implementation of my Bachelor Thesis. It consists of a refactored and extended implementation of the **KEDKG (Knowledge Editing via Dynamic Graphs)** framework. The framework has been adapted to support both the **MQuAKE** and **RippleEdits** benchmarks for evaluating LLM knowledge editing.
+This repository contains the implementation of my Bachelor Thesis. It consists of a refactored and extended implementation of the **[KEDKG (Knowledge Editing via Dynamic Graphs)](https://github.com/ABi-dot/Kedkg)** framework. The framework has been adapted to support both the **[RippleEdits](https://github.com/edenbiran/RippleEdits)** benchmark for evaluating LLM knowledge editing.
 
 # Project Run Guide
 
@@ -12,6 +12,7 @@ conda create -n Kedkg python=3.9
 conda activate Kedkg
 pip install -r requirements.txt
 cd external/kedkg
+cd ../..
 python -m spacy_entity_linker "download_knowledge_base"
 ```
 
@@ -38,10 +39,8 @@ python -m spacy_entity_linker "download_knowledge_base"
 ├── results				# Output folder for experiment logs and results
 ├── src				 	# Core source files for this implementation
 │   ├── benchmarks
-│   │   ├── mquake_runner.py		# Runner for MQuAKE evaluation
 │   │   └── ripple_runner.py		# Runner for RippleEdits evaluation
 │   ├── configs				# YAML configuration files
-│   │   ├── mquake.yaml
 │   │   └── ripple.yaml
 │   ├── prompts				# Prompt templates
 │   │   └── v0
@@ -50,7 +49,7 @@ python -m spacy_entity_linker "download_knowledge_base"
 │   │       └── test.txt
 │   ├── kedkg_v0.py			# Corresponding KEDKG versions
 │   ├── ...
-│   └── kedkg_vX.py
+│   └── kedkg_v3.py
 ├── requirements.txt
 └── README.md
 ```

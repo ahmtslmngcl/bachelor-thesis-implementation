@@ -11,6 +11,7 @@ from typing import Optional
 import spacy
 import openai
 
+
 try: # lazy import
     from src.modeleditor import ModelEditor
     from src.queryexecutor import QueryExecutor
@@ -238,6 +239,47 @@ class KEDKG:
                 traceback.print_exc()
                 time.sleep(10)
         return result
+    
+    
+    def llm_answer_with_facts(self, question: str) -> str:
+        """
+        LLM answering that uses edit related KG triples explicitly in the prompt.
+        """
+
+        facts = []
+        for (head, rel), tails in self.triples.items():
+            for (tail, _) in tails:
+                h = self.qid2name.get(head, head)
+                t = self.qid2name.get(tail, tail)
+                facts.append(f"{h} —[{rel}]→ {t}")
+
+        facts_block = "\n".join(f"{i}. {f}" for i, f in enumerate(facts, start=1))
+        if not facts:
+            facts_block = "No known facts."
+
+        prompt = (
+            "You are a factual reasoning assistant.\n"
+            "Use the knowledge graph facts below when answering.\n"
+            "If the facts are sufficient, answer based on them.\n"
+            "If not, use your own general world knowledge.\n"
+            "Your answer must be a single entity. Begin with 'Answer:'.\n\n"
+            f"Facts:\n{facts_block}\n\n"
+            f"Question: {question}\n\n"
+            "Answer:"
+        )
+
+        print(prompt)
+
+        messages = [{"role": "user", "content": prompt}]
+        response = self.client.ChatCompletion.create(
+            model=LLM_ANSWER_MODEL,
+            messages=messages,
+            #temperature=0,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
+        return response["choices"][0]["message"]["content"].strip()
+
 
     def predict(self, question, relation, FLAG):
         if FLAG == ENTITY:
@@ -360,7 +402,6 @@ class KEDKG:
                     if head == None or head == "" or tail == None or tail == "" or rel == None or rel == "":
                         continue
 
-                    # erase true answer
                     target_str = edit["target_true"]["str"]
                     if target_str and (target_str in head or target_str in tail):
                         continue
@@ -412,7 +453,7 @@ class KEDKG:
                 rel = triple['type']
                 if head == None or head == "" or tail == None or tail == "" or rel == None or rel == "":
                     continue
-
+                
                 # erase true answer
                 target_str = edit["target_true"]["str"]
                 if target_str and (target_str in head or target_str in tail):
@@ -466,7 +507,14 @@ class KEDKG:
         if extra_prints_flag:
             print("[Model] restore | kb=0 (cleared)")
 
+    
     def kedkg_answer_question(self, question, return_all=False):
+        """
+        v3 (i.e. v2_decomp; v2 with question decomposition) answering pipeline:
+        - apply question decomposition to input query (like in v0)
+        - process each subquestion using v2’s answering logic
+        """
+        # print("running v2_decomp")
         entity = ""
         entity_list = []
         prompt = self.divide_prompt.replace("<<<<QUESTION>>>>", question)
@@ -479,28 +527,67 @@ class KEDKG:
             # shown = "; ".join(sub_questions[:2]) + (" …" if len(sub_questions) > 2 else "")
             print(f"[Model] subqs   | {sub_questions}")
 
+        has_facts = any(len(v) > 0 for v in self.triples.values())
         for subq in sub_questions:
             subq = subq.replace("[ENT]", entity)
             self.print_kb()
-            retrieve = self.retrieve_from_graph(subq)
-            if retrieve is None:
-                prompt = self.answer_prompt.replace("<<<<QUESTION>>>>", subq)
-                # not found, pass to LLM
-                output = self.run_llm_answer(prompt)
+            # If KG contains triples about the edit (i.e. KG is not empty) → LLM-augmented with facts
+            if has_facts:
+                output = self.llm_answer_with_facts(subq)
+                # Important: Parse "Answer: " out so the next [ENT] replacement works cleanly
                 match = re.search(r'Answer: (.*)', output)
                 if match:
                     entity = match.group(1)
                 else:
                     entity = output
                 if extra_prints_flag:
-                    print(f"[Model] answer  | source=llm    value={entity}")
+                    print(f"[Model] answer  | source=llm+facts value={entity}")
             else:
-                entity = retrieve
+                # If KG empty → fallback to solely LLM answering
+                prompt = self.answer_prompt.replace("<<<<QUESTION>>>>", subq)
+                output = self.run_llm_answer(prompt)
+                
+                match = re.search(r'Answer: (.*)', output)
+                if match:
+                    entity = match.group(1)
+                else:
+                    entity = output
                 if extra_prints_flag:
-                    print(f"[Model] answer  | source=graph  value={entity}")
+                    print(f"[Model] answer  | source=llm  value={entity}")                    
             entity_list.append(entity)
         return entity_list if return_all else entity
- 
+
+
+    """
+    def kedkg_answer_question(self, question: str, return_all=False):
+        
+        v2 answering pipeline:
+        - treat question as atomic (no decomposition)
+        - if KG contains triples (related to the query) → fact-augmented LLM answering
+        - if not → LLM fallback without retrieved triples
+        
+
+        question = question.strip()
+        if extra_prints_flag:
+            print(f"\n[Model] divide  | in: {question}  ->  out: {question}")
+            self.print_kb()
+
+        # If KG contains triples about the edit (i.e. KG is not empty) → LLM-augmented with facts
+        has_facts = any(len(v) > 0 for v in self.triples.values())
+        if has_facts:
+            entity = self.llm_answer_with_facts(question)
+            if extra_prints_flag:
+                print(f"[Model] answer  | source=llm+facts value={entity}")
+            return entity
+
+        # If KG empty → fallback to solely LLM answering
+        prompt = self.answer_prompt.replace("<<<<QUESTION>>>>", question)
+        entity = self.run_llm_answer(prompt)
+        if extra_prints_flag:
+                print(f"[Model] answer  | source=graph  value={entity}")
+        return entity
+    """
+
     def ripple_modify_graph(self, sentence: str, skip_label: Optional[str] = None):
         """Thin wrapper around modfiy_graph() for RippleEdits compaitbility"""
         d = {

@@ -11,7 +11,6 @@ from typing import Optional
 import spacy
 import openai
 
-LINKING_FAIL_COUNT = 0
 
 try: # lazy import
     from src.modeleditor import ModelEditor
@@ -201,21 +200,6 @@ class KEDKG:
 
         return kb
 
-    """    
-    def link_entity(self, entity, nlp):
-        pattern = r'Q\d+'
-        name = entity
-        try:
-            linking = re.search(pattern, str(nlp(entity.capitalize())._.linkedEntities))
-        except:
-            linking = re.search(pattern, str(nlp(entity)._.linkedEntities))
-        if linking:
-            linking = linking.group(0) # Q?
-        else:
-            linking = name
-        return linking
-    """
-
     def link_entity(self, entity, nlp):
         pattern = r'Q\d+'
         name = entity
@@ -230,8 +214,6 @@ class KEDKG:
                 linking = name
             return linking
         except Exception as e:
-            global LINKING_FAIL_COUNT
-            LINKING_FAIL_COUNT += 1
             print(f"[Error] link_entity fail for '{entity}': {e}")
             return name
 
@@ -380,7 +362,8 @@ class KEDKG:
                         continue
 
                     # erase true answer
-                    if edit["target_true"]["str"] in head or edit["target_true"]["str"] in tail:
+                    target_str = edit["target_true"]["str"]
+                    if target_str and (target_str in head or target_str in tail):
                         continue
                     
                     try:
@@ -432,7 +415,8 @@ class KEDKG:
                     continue
 
                 # erase true answer
-                if edit["target_true"]["str"] in head or edit["target_true"]["str"] in tail:
+                target_str = edit["target_true"]["str"]
+                if target_str and (target_str in head or target_str in tail):
                     continue
                 
                 try:
@@ -486,8 +470,6 @@ class KEDKG:
     def kedkg_answer_question(self, question, return_all=False):
         entity = ""
         entity_list = []
-        # prompt = self.divide_prompt.replace("<<<<QUESTION>>>>", question)
-        # output = self.run_llm_divide(prompt)
         # print("running v1")
         question = question.strip()
         if extra_prints_flag:

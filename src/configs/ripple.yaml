@@ -1,11 +1,11 @@
-version: "0"
-model_name: "qwen3:4b-instruct"
-dataset_name: "popular"
-num_examples: 1
+version: "1"
+model_name: "gemma3:4b"
+dataset_name: "recent"
+num_examples: 200
 extra_prints: true
 llm_cfg:
-  answer_model: "qwen3:4b-instruct"
-  divide_model: "qwen3:4b-instruct"
+  answer_model: "gemma3:4b"
+  divide_model: "gemma3:4b"
   base_url: "http://127.0.0.1:11434/v1"
   api_key: "dummy"
 prompt_cfg:
